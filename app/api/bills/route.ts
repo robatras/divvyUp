@@ -79,6 +79,7 @@ export async function POST(request: Request) {
       bill_id: bill.id,
       name: p.name,
       phone_number: p.phone || `UNSET-${billCode}-${index + 1}`,
+      plus_one_count: p.plusOneCount || 0,
       has_responded: false
     }))
 

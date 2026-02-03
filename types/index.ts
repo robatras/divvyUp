@@ -37,6 +37,7 @@ export interface Participant {
   user_id?: string
   name: string
   phone_number: string
+  plus_one_count: number
   invite_sent_at?: string
   joined_at?: string
   last_updated_at?: string

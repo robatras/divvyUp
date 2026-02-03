@@ -36,6 +36,7 @@ interface ItemInput {
 
 interface ParticipantInput {
   name: string
+  plusOneCount: number
 }
 
 type Step = 'receipt' | 'items' | 'participants' | 'review'
@@ -51,7 +52,7 @@ export default function CreateBillPage() {
   const [receiptImage, setReceiptImage] = useState<File | null>(null)
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null)
   const [items, setItems] = useState<ItemInput[]>([{ id: 'item-0', name: '', price: '', quantity: 1 }])
-  const [participants, setParticipants] = useState<ParticipantInput[]>([{ name: '' }])
+  const [participants, setParticipants] = useState<ParticipantInput[]>([{ name: '', plusOneCount: 0 }])
   const [taxAmount, setTaxAmount] = useState('')
   const [tipAmount, setTipAmount] = useState('')
   const [ocrData, setOcrData] = useState<any>(null)
@@ -81,7 +82,7 @@ export default function CreateBillPage() {
     // Run OCR
     setOcrLoading(true)
     try {
-      const base64 = await fileToBase64(file)
+      const base64 = await resizeImageToBase64(file)
       const response = await fetch('/api/ocr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,11 +131,29 @@ export default function CreateBillPage() {
   }
 
   const addParticipant = () => {
-    setParticipants([...participants, { name: '' }])
+    setParticipants([...participants, { name: '', plusOneCount: 0 }])
   }
 
   const removeParticipant = (index: number) => {
     setParticipants(participants.filter((_, i) => i !== index))
+  }
+
+  const incrementPlusOne = (index: number) => {
+    setParticipants((prev) => {
+      const next = [...prev]
+      next[index] = { ...next[index], plusOneCount: next[index].plusOneCount + 1 }
+      return next
+    })
+  }
+
+  const decrementPlusOne = (index: number) => {
+    setParticipants((prev) => {
+      const next = [...prev]
+      if (next[index].plusOneCount > 0) {
+        next[index] = { ...next[index], plusOneCount: next[index].plusOneCount - 1 }
+      }
+      return next
+    })
   }
 
   const updateParticipant = (index: number, field: keyof ParticipantInput, value: string) => {
@@ -222,7 +241,10 @@ export default function CreateBillPage() {
             price: parseFloat(i.price),
             quantity: i.quantity
           })),
-          participants: participants.filter(p => p.name),
+          participants: participants.filter(p => p.name).map(p => ({
+            name: p.name,
+            plusOneCount: p.plusOneCount
+          })),
           taxAmount: parseFloat(taxAmount) || 0,
           tipAmount: parseFloat(tipAmount) || 0,
           receiptImageUrl,
@@ -443,20 +465,56 @@ export default function CreateBillPage() {
 
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Add Friends</h3>
-                <p className="text-gray-600">Who's splitting this bill?</p>
+                <p className="text-gray-600 mb-3">Who's splitting this bill?</p>
+                <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <div className="flex-1">Enter each person's name</div>
+                  <div className="flex items-center gap-1.5">
+                    <Plus size={14} />
+                    <span className="font-medium">Add +1 guests</span>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-4">
                 {participants.map((participant, index) => (
-                  <div key={index} className="flex gap-3 items-start">
+                  <div key={index} className="flex gap-3 items-center">
                     <div className="flex-1">
-                      <input
-                        type="text"
-                        placeholder="Name"
-                        value={participant.name}
-                        onChange={(e) => updateParticipant(index, 'name', e.target.value)}
-                        className="input-field text-gray-900"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Name"
+                          value={participant.name}
+                          onChange={(e) => updateParticipant(index, 'name', e.target.value)}
+                          className="input-field text-gray-900"
+                        />
+                        {participant.plusOneCount > 0 && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-primary/10 text-primary text-xs font-bold rounded-full border border-primary/30">
+                            +{participant.plusOneCount}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 bg-gray-50 rounded-lg border border-gray-200 p-1">
+                      <button
+                        type="button"
+                        onClick={() => decrementPlusOne(index)}
+                        disabled={participant.plusOneCount === 0}
+                        className="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-white rounded disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        title="Remove +1"
+                      >
+                        <span className="text-lg leading-none">−</span>
+                      </button>
+                      <div className="w-8 text-center text-sm font-bold text-gray-700">
+                        {participant.plusOneCount}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => incrementPlusOne(index)}
+                        className="w-7 h-7 flex items-center justify-center text-white bg-gradient-to-r from-primary to-primary-dark rounded hover:shadow-md transition-all"
+                        title="Add +1"
+                      >
+                        <Plus size={14} />
+                      </button>
                     </div>
                     {participants.length > 1 && (
                       <button
@@ -525,12 +583,19 @@ export default function CreateBillPage() {
 
                 <div className="bg-gray-50 rounded-xl p-4">
                   <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <Users size={20} /> Participants ({participants.filter(p => p.name).length})
+                    <Users size={20} /> Participants ({participants.filter(p => p.name).reduce((sum, p) => sum + 1 + p.plusOneCount, 0)})
                   </h3>
                   <div className="space-y-2">
                     {participants.filter(p => p.name).map((p, i) => (
                       <div key={i} className="flex justify-between text-gray-700">
-                        <span>{p.name}</span>
+                        <span>
+                          {p.name}
+                          {p.plusOneCount > 0 && (
+                            <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary text-xs font-bold rounded-full border border-primary/30">
+                              +{p.plusOneCount}
+                            </span>
+                          )}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -666,5 +731,39 @@ async function fileToBase64(file: File): Promise<string> {
     reader.onload = () => resolve(reader.result as string)
     reader.onerror = reject
     reader.readAsDataURL(file)
+  })
+}
+
+async function resizeImageToBase64(
+  file: File,
+  maxDimension = 1600,
+  quality = 0.72
+): Promise<string> {
+  const dataUrl = await fileToBase64(file)
+  const image = new Image()
+
+  return new Promise((resolve, reject) => {
+    image.onload = () => {
+      const { width, height } = image
+      const scale = Math.min(1, maxDimension / Math.max(width, height))
+      const targetWidth = Math.round(width * scale)
+      const targetHeight = Math.round(height * scale)
+
+      const canvas = document.createElement('canvas')
+      canvas.width = targetWidth
+      canvas.height = targetHeight
+
+      const context = canvas.getContext('2d')
+      if (!context) {
+        reject(new Error('Canvas not supported'))
+        return
+      }
+
+      context.drawImage(image, 0, 0, targetWidth, targetHeight)
+      const resized = canvas.toDataURL('image/jpeg', quality)
+      resolve(resized)
+    }
+    image.onerror = reject
+    image.src = dataUrl
   })
 }

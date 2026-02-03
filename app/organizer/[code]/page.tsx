@@ -178,7 +178,14 @@ export default function OrganizerBillPage() {
                     className="border border-gray-200 rounded-2xl p-4"
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-gray-900 font-semibold">{participant.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-gray-900 font-semibold">{participant.name}</p>
+                        {participant.plus_one_count > 0 && (
+                          <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-bold rounded-full border border-primary/30">
+                            +{participant.plus_one_count}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-gray-500 text-sm">
                         {participant.has_responded ? 'Responded' : 'Pending'}
                       </p>
@@ -249,7 +256,11 @@ export default function OrganizerBillPage() {
                         ) ? null : (
                           <p className="text-gray-500 text-sm">
                             {claimers.length
-                              ? `Claimed by: ${claimers.map((claimer) => claimer?.name).join(', ')}`
+                              ? `Claimed by: ${claimers.map((claimer) => {
+                                  const name = claimer?.name || 'Unknown'
+                                  const plusOne = claimer?.plus_one_count > 0 ? ` +${claimer.plus_one_count}` : ''
+                                  return `${name}${plusOne}`
+                                }).join(', ')}`
                               : 'Unclaimed'}
                           </p>
                         )}

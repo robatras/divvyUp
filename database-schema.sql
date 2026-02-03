@@ -102,16 +102,17 @@ CREATE TABLE participants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   bill_id UUID REFERENCES bills(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE SET NULL, -- NULL if not registered
-  
+
   name VARCHAR(255) NOT NULL,
   phone_number VARCHAR(20) NOT NULL,
-  
+  plus_one_count INTEGER DEFAULT 0, -- Number of +1 guests for this participant
+
   -- Status tracking
   invite_sent_at TIMESTAMP WITH TIME ZONE,
   joined_at TIMESTAMP WITH TIME ZONE,
   last_updated_at TIMESTAMP WITH TIME ZONE,
   has_responded BOOLEAN DEFAULT FALSE,
-  
+
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

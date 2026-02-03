@@ -247,6 +247,17 @@ async function recalculateClaims(itemId: string) {
     .select('price, quantity')
     .eq('bill_id', bill.id)
 
+  const { data: participants } = await supabaseAdmin
+    .from('participants')
+    .select('id, plus_one_count')
+    .eq('bill_id', bill.id)
+
+  const participantMap = new Map<string, { plusOneCount: number }>()
+  ;(participants || []).forEach((p: any) => {
+    const plusOneCount = Number(p.plus_one_count)
+    participantMap.set(p.id, { plusOneCount: Number.isFinite(plusOneCount) ? plusOneCount : 0 })
+  })
+
   const subtotal = (billItems || []).reduce((sum, billItem) => {
     const itemPrice = parseFloat(billItem.price)
     return sum + itemPrice
@@ -255,6 +266,11 @@ async function recalculateClaims(itemId: string) {
   const tipAmount = Number(bill.ocr_tip_amount) || 0
   const extrasTotal = taxAmount + tipAmount
   const multiplier = subtotal > 0 ? 1 + (extrasTotal / subtotal) : 1
+
+  const totalPersonCount = (participants || []).reduce((sum: number, p: any) => {
+    const plusOneCount = Number(p.plus_one_count)
+    return sum + 1 + (Number.isFinite(plusOneCount) ? plusOneCount : 0)
+  }, 0)
 
   // Get all claims for this item
   const { data: claims } = await supabaseAdmin
@@ -274,18 +290,24 @@ async function recalculateClaims(itemId: string) {
     if (claim.share_type === 'solo') {
       const claimQuantity = claim.quantity_claimed ?? 1
       const itemQuantity = item.quantity || 1
-      amountOwed = itemWithExtras * (claimQuantity / itemQuantity)
+      const plusOneCount = participantMap.get(claim.participant_id)?.plusOneCount || 0
+      const personCount = 1 + plusOneCount
+      amountOwed = itemWithExtras * (claimQuantity / itemQuantity) * personCount
     } else if (claim.share_type === 'split_with_all') {
-      // Get participant count
-      const { count } = await supabaseAdmin
-        .from('participants')
-        .select('*', { count: 'exact', head: true })
-        .eq('bill_id', bill.id)
-
-      amountOwed = itemWithExtras / (count || 1)
+      const plusOneCount = participantMap.get(claim.participant_id)?.plusOneCount || 0
+      const personCount = 1 + plusOneCount
+      amountOwed = totalPersonCount > 0 ? itemWithExtras * (personCount / totalPersonCount) : 0
     } else if (claim.share_type === 'split_with_specific') {
-      const shareCount = (claim.share_with_participant_ids?.length || 0) + 1
-      amountOwed = itemWithExtras / shareCount
+      const shareWith = claim.share_with_participant_ids || []
+      const claimerPlusOne = participantMap.get(claim.participant_id)?.plusOneCount || 0
+      let totalPerson = 1 + claimerPlusOne
+      shareWith.forEach((pid: string) => {
+        const plusOneCount = participantMap.get(pid)?.plusOneCount || 0
+        totalPerson += 1 + plusOneCount
+      })
+      const perPerson = totalPerson > 0 ? itemWithExtras / totalPerson : 0
+      const claimerPerson = 1 + claimerPlusOne
+      amountOwed = perPerson * claimerPerson
     }
 
     await supabaseAdmin

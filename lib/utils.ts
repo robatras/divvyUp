@@ -1,3 +1,9 @@
+// Helper to safely get plus one count
+function getPlusOneCount(participant: any): number {
+  const count = Number(participant?.plus_one_count)
+  return Number.isFinite(count) && count >= 0 ? count : 0
+}
+
 export function calculateSplits(
   items: any[],
   participants: any[],
@@ -6,7 +12,7 @@ export function calculateSplits(
   tipAmount: number
 ): Record<string, number> {
   const splits: Record<string, number> = {}
-  
+
   // Initialize all participants to 0
   participants.forEach(p => {
     splits[p.id] = 0
@@ -19,34 +25,63 @@ export function calculateSplits(
   const extrasTotal = (Number(taxAmount) || 0) + (Number(tipAmount) || 0)
   const multiplier = subtotal > 0 ? 1 + (extrasTotal / subtotal) : 1
 
+  // Calculate total person count including +1s for split_with_all
+  const totalPersonCount = participants.reduce((sum, p) => {
+    return sum + 1 + getPlusOneCount(p)
+  }, 0)
+
   // Process each claim
   claims.forEach(claim => {
     const item = items.find(i => i.id === claim.item_id)
     if (!item) return
 
+    const claimer = participants.find(p => p.id === claim.participant_id)
+    if (!claimer) return
+
     const itemPrice = Number(item.price)
     const itemWithExtras = itemPrice * multiplier
+    const claimerPersonCount = 1 + getPlusOneCount(claimer)
 
     if (claim.share_type === 'solo') {
       // One person gets the full item
+      // For quantity items (qty > 1), the quantity represents servings/portions
+      // So we don't multiply by person count - they claim X items regardless of +1s
       const claimQuantity = claim.quantity_claimed ?? 1
       const itemQuantity = item.quantity || 1
-      splits[claim.participant_id] += itemWithExtras * (claimQuantity / itemQuantity)
+      const portionPrice = itemWithExtras * (claimQuantity / itemQuantity)
+
+      // Only multiply by person count if item quantity is 1 (not a multi-quantity item)
+      const finalAmount = itemQuantity === 1 ? portionPrice * claimerPersonCount : portionPrice
+      splits[claim.participant_id] += finalAmount
     } else if (claim.share_type === 'split_with_all') {
-      // Split among all participants
-      const perPerson = itemWithExtras / participants.length
+      // Split among all participants (accounting for +1s)
+      const perPerson = itemWithExtras / totalPersonCount
       participants.forEach(p => {
-        splits[p.id] += perPerson
+        const personCount = 1 + getPlusOneCount(p)
+        splits[p.id] += perPerson * personCount
       })
     } else if (claim.share_type === 'split_with_specific') {
-      // Split among specific people
+      // Split among specific people (accounting for +1s)
       const shareWith = claim.share_with_participant_ids || []
-      const totalSharers = shareWith.length + 1 // Include claimer
-      const perPerson = itemWithExtras / totalSharers
-      
-      splits[claim.participant_id] += perPerson
+
+      // Calculate total person count for this split
+      let totalSharerPersonCount = claimerPersonCount
       shareWith.forEach((pid: string) => {
-        splits[pid] += perPerson
+        const sharer = participants.find(p => p.id === pid)
+        if (sharer) {
+          totalSharerPersonCount += 1 + getPlusOneCount(sharer)
+        }
+      })
+
+      const perPerson = itemWithExtras / totalSharerPersonCount
+
+      splits[claim.participant_id] += perPerson * claimerPersonCount
+      shareWith.forEach((pid: string) => {
+        const sharer = participants.find(p => p.id === pid)
+        if (sharer) {
+          const sharerPersonCount = 1 + getPlusOneCount(sharer)
+          splits[pid] += perPerson * sharerPersonCount
+        }
       })
     }
   })
@@ -113,31 +148,58 @@ export function getItemizedShares(
     result[participantId].subtotal += amount
   }
 
+  // Calculate total person count including +1s for split_with_all
+  const totalPersonCount = participants.reduce((sum, p) => {
+    return sum + 1 + getPlusOneCount(p)
+  }, 0)
+
   claims.forEach((claim) => {
     const item = items.find((candidate) => candidate.id === claim.item_id)
     if (!item) return
 
-    const itemPrice = parseFloat(item.price)
+    const claimer = participants.find(p => p.id === claim.participant_id)
+    if (!claimer) return
+
+    const itemPrice = Number(item.price)
     if (!Number.isFinite(itemPrice)) return
+
+    const claimerPersonCount = 1 + getPlusOneCount(claimer)
 
     if (claim.share_type === 'solo') {
       const claimQuantity = claim.quantity_claimed ?? 1
       const itemQuantity = item.quantity || 1
-      const amount = itemPrice * (claimQuantity / itemQuantity)
+      const portionPrice = itemPrice * (claimQuantity / itemQuantity)
+
+      // Only multiply by person count if item quantity is 1 (not a multi-quantity item)
+      const amount = itemQuantity === 1 ? portionPrice * claimerPersonCount : portionPrice
       addShare(claim.participant_id, item.id, item.name, amount)
     } else if (claim.share_type === 'split_with_all') {
-      const perPerson = itemPrice / participants.length
+      const perPerson = itemPrice / totalPersonCount
       participants.forEach((participant) => {
-        addShare(participant.id, item.id, item.name, perPerson)
+        const personCount = 1 + getPlusOneCount(participant)
+        addShare(participant.id, item.id, item.name, perPerson * personCount)
       })
     } else if (claim.share_type === 'split_with_specific') {
       const shareWith = claim.share_with_participant_ids || []
-      const totalSharers = shareWith.length + 1
-      const perPerson = itemPrice / totalSharers
 
-      addShare(claim.participant_id, item.id, item.name, perPerson)
+      // Calculate total person count for this split
+      let totalSharerPersonCount = claimerPersonCount
       shareWith.forEach((pid: string) => {
-        addShare(pid, item.id, item.name, perPerson)
+        const sharer = participants.find(p => p.id === pid)
+        if (sharer) {
+          totalSharerPersonCount += 1 + getPlusOneCount(sharer)
+        }
+      })
+
+      const perPerson = itemPrice / totalSharerPersonCount
+
+      addShare(claim.participant_id, item.id, item.name, perPerson * claimerPersonCount)
+      shareWith.forEach((pid: string) => {
+        const sharer = participants.find(p => p.id === pid)
+        if (sharer) {
+          const sharerPersonCount = 1 + getPlusOneCount(sharer)
+          addShare(pid, item.id, item.name, perPerson * sharerPersonCount)
+        }
       })
     }
   })
