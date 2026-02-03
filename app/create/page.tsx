@@ -374,7 +374,7 @@ export default function CreateBillPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex gap-3 items-center text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <div className="hidden sm:flex gap-3 items-center text-xs font-semibold uppercase tracking-wide text-gray-500">
                   <div className="w-6" aria-hidden="true" />
                   <div className="flex-1">Item</div>
                   <div className="w-24 text-center">Total</div>
@@ -671,17 +671,78 @@ function SortableItemRow({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="flex gap-3 items-center">
+    <div ref={setNodeRef} style={style} className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center bg-white rounded-2xl p-3 sm:p-4 border border-gray-200">
+      {/* Mobile: Stacked layout */}
+      <div className="sm:hidden">
+        <div className="flex items-center gap-2 mb-3">
+        <button
+          type="button"
+          className="w-8 h-11 flex items-center justify-center text-gray-400 hover:text-gray-600 shrink-0"
+          aria-label="Drag to reorder"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical size={16} />
+        </button>
+          <div className="flex-1 min-w-0">
+            <input
+              type="text"
+              placeholder="Item name"
+              value={item.name}
+              onChange={(e) => onChange(index, 'name', e.target.value)}
+              className="w-full px-3 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-gray-900 font-medium"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <div className="text-[10px] font-semibold text-gray-500 mb-0.5 text-center uppercase tracking-wide">Total</div>
+            <input
+              type="number"
+              placeholder="0"
+              value={item.price}
+              onChange={(e) => onChange(index, 'price', e.target.value)}
+              className="w-full px-2 py-2.5 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-gray-900 text-center font-bold text-base"
+              step="1"
+              inputMode="decimal"
+            />
+          </div>
+          <div>
+            <div className="text-[10px] font-semibold text-gray-500 mb-0.5 text-center uppercase tracking-wide">Qty</div>
+            <input
+              type="number"
+              placeholder="1"
+              value={item.quantity}
+              onChange={(e) => onChange(index, 'quantity', parseInt(e.target.value) || 1)}
+              className="w-full px-2 py-2.5 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-gray-900 text-center font-bold text-base"
+              min="1"
+              inputMode="numeric"
+            />
+          </div>
+        </div>
+        {showRemove && (
+          <button
+            type="button"
+            onClick={() => onRemove(index)}
+            className="mt-2 w-full flex items-center justify-center gap-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl py-2 text-sm font-semibold transition-colors"
+          >
+            <Trash2 size={16} />
+            Remove item
+          </button>
+        )}
+      </div>
+
+      {/* Desktop: Horizontal layout */}
       <button
         type="button"
-        className="w-6 h-11 flex items-center justify-center text-gray-400 hover:text-gray-600"
+        className="hidden sm:flex w-6 h-11 items-center justify-center text-gray-400 hover:text-gray-600"
         aria-label="Drag to reorder"
         {...attributes}
         {...listeners}
       >
         <GripVertical size={18} />
       </button>
-      <div className="flex-1">
+      <div className="hidden sm:block flex-1">
         <input
           type="text"
           placeholder="Item name"
@@ -690,7 +751,7 @@ function SortableItemRow({
           className="input-field text-gray-900"
         />
       </div>
-      <div className="w-24">
+      <div className="hidden sm:block w-24">
         <input
           type="number"
           placeholder="Total"
@@ -700,7 +761,7 @@ function SortableItemRow({
           step="1"
         />
       </div>
-      <div className="w-16">
+      <div className="hidden sm:block w-16">
         <input
           type="number"
           placeholder="Qty"
@@ -714,12 +775,12 @@ function SortableItemRow({
         <button
           type="button"
           onClick={() => onRemove(index)}
-          className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+          className="hidden sm:block p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
         >
           <Trash2 size={20} />
         </button>
       ) : (
-        <div className="w-10" aria-hidden="true" />
+        <div className="hidden sm:block w-10" aria-hidden="true" />
       )}
     </div>
   )
