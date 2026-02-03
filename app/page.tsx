@@ -42,16 +42,16 @@ export default function Home() {
             No math, no awkwardness, no hassle.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/create">
-              <button className="btn-primary text-lg px-8 py-4 flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link href="/create" className="w-full sm:w-auto">
+              <button className="btn-primary text-lg px-8 py-4 flex items-center gap-2 w-full justify-center">
                 Create New Bill
                 <ArrowRight size={20} />
               </button>
             </Link>
             
-            <Link href="/join">
-              <button className="btn-secondary text-lg px-8 py-4">
+            <Link href="/join" className="w-full sm:w-auto">
+              <button className="btn-secondary text-lg px-8 py-4 w-full">
                 Join Existing Bill
               </button>
             </Link>
@@ -59,26 +59,26 @@ export default function Home() {
         </div>
 
         {/* Features */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           <FeatureCard
-            icon={<Camera size={32} />}
+            icon={<Camera size={28} />}
             title="Snap Receipt"
-            description="AI extracts items, tax, and tip automatically"
-            color="from-green-400 to-green-600"
+            description="AI pulls items, tax, and tip in seconds."
+            color="from-emerald-400/80 to-emerald-600"
           />
           
           <FeatureCard
-            icon={<Share2 size={32} />}
+            icon={<Share2 size={28} />}
             title="Send Link"
-            description="Friends get text with sharable link"
-            color="from-blue-400 to-blue-600"
+            description="Share once. Everyone claims their items."
+            color="from-sky-400/80 to-sky-600"
           />
           
           <FeatureCard
-            icon={<DollarSign size={32} />}
-            title="Auto-Calculate"
-            description="Everyone picks items, we handle the math"
-            color="from-purple-400 to-purple-600"
+            icon={<DollarSign size={28} />}
+            title="Auto‑Calculate"
+            description="Totals, tax, and tip updated instantly."
+            color="from-amber-400/80 to-amber-600"
           />
         </div>
 
@@ -103,12 +103,13 @@ function FeatureCard({
   color: string
 }) {
   return (
-    <div className="glass-card rounded-3xl p-8 hover:scale-105 transition-transform duration-200">
-      <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${color} rounded-2xl mb-6 text-white shadow-lg`}>
-        {icon}
+    <div className="glass-card rounded-3xl p-6 md:p-7 transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl">
+      <div className="flex items-center gap-4 mb-4">
+        <div className={`inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br ${color} rounded-2xl text-white shadow-lg`}>
+          {icon}
+        </div>
+        <h3 className="text-xl font-bold text-gray-900">{title}</h3>
       </div>
-      
-      <h3 className="text-2xl font-bold text-gray-900 mb-3">{title}</h3>
       <p className="text-gray-600 leading-relaxed">{description}</p>
     </div>
   )

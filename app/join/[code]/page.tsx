@@ -244,25 +244,40 @@ export default function JoinBillPage() {
 
             <div className="glass-card rounded-3xl p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Claim your items</h3>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Claim your items</h3>
+                  <p className="text-sm text-gray-500">Claim items to see what you owe.</p>
+                </div>
                 <p className="text-sm text-gray-500">
                   {unclaimedItems.length} unclaimed
                 </p>
               </div>
 
-              <div className="mb-6 flex flex-wrap items-center gap-3">
-                <div className="bg-gray-100 rounded-2xl px-4 py-3 text-gray-700">
-                  Your subtotal: {formatCurrency(mySubtotal)}
+              <div className="mb-6 rounded-2xl border border-gray-200 bg-white/70 p-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="flex items-center justify-between text-gray-700">
+                    <span className="text-sm">Your subtotal</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(mySubtotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-gray-700">
+                    <span className="text-sm">Your tax ({(taxPercent * 100).toFixed(2)}%)</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(myTax)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-gray-700">
+                    <span className="text-sm">Your tip ({(tipPercent * 100).toFixed(2)}%)</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(myTip)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-green-100 px-3 py-2 text-green-800">
+                    <span className="text-sm font-semibold">Your total</span>
+                    <span className="font-bold">{formatCurrency(myTotal)}</span>
+                  </div>
                 </div>
-                <div className="bg-gray-100 rounded-2xl px-4 py-3 text-gray-700">
-                  Your tax ({(taxPercent * 100).toFixed(2)}%): {formatCurrency(myTax)}
-                </div>
-                <div className="bg-gray-100 rounded-2xl px-4 py-3 text-gray-700">
-                  Your tip ({(tipPercent * 100).toFixed(2)}%): {formatCurrency(myTip)}
-                </div>
-                <div className="bg-green-100 rounded-2xl px-4 py-3 text-green-700 font-semibold">
-                  Your total: {formatCurrency(myTotal)}
-                </div>
+              </div>
+
+              <div className="mb-4 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
+                <span className="flex-1 h-px bg-gray-200" />
+                Items
+                <span className="flex-1 h-px bg-gray-200" />
               </div>
 
               {myItems.length ? (
@@ -307,7 +322,6 @@ export default function JoinBillPage() {
                   }, 0)
                   const selectedQuantityForRemaining = claimedBySelected ? selectedClaimQuantity : 0
                   const remainingQuantity = Math.max((item.quantity || 1) - claimedQuantity + selectedQuantityForRemaining, 0)
-                  const isFullyClaimed = remainingQuantity <= 0 && !claimedBySelected
                   const inputQuantity = claimQuantities[item.id] ?? selectedClaimQuantity
                   const splitWithAllClaim = bill.claims.find(
                     (claim) => claim.item_id === item.id && claim.share_type === 'split_with_all'
@@ -317,6 +331,8 @@ export default function JoinBillPage() {
                   const splitWithAllName = splitWithAllClaim
                     ? bill.participants.find((participant) => participant.id === splitWithAllClaim.participant_id)?.name
                     : ''
+                  const isFullyClaimed = remainingQuantity <= 0 && !claimedBySelected
+                  const isLocked = isFullyClaimed || splitWithAllLocked
                   const shareType = splitWithAllClaim
                     ? 'split_with_all'
                     : claimShareTypes[item.id] || selectedClaim?.share_type || 'solo'
@@ -330,7 +346,7 @@ export default function JoinBillPage() {
                   return (
                     <div
                       key={item.id}
-                      className={`border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${isFullyClaimed || splitWithAllLocked ? 'bg-gray-50 opacity-70' : ''}`}
+                      className={`border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${isLocked ? 'bg-gray-100 border-gray-300 opacity-80' : 'border-gray-200 bg-white'}`}
                     >
                       <div>
                         <h4 className="text-gray-900 font-semibold">
@@ -341,131 +357,131 @@ export default function JoinBillPage() {
                           {formatCurrency(perItemPrice)}
                           {item.quantity > 1 ? ' each' : ''}
                         </p>
-                        {splitWithAllClaim ? null : (
-                          <p className="text-gray-500 text-sm">
+                        {splitWithAllClaim ? (
+                          <p className="text-sm text-blue-600 font-medium">
+                            Split equally{splitWithAllName ? ` (set by ${splitWithAllName})` : ''}
+                          </p>
+                        ) : (
+                          <p className="text-blue-600 text-sm font-medium">
                             {claimers.length
                               ? `Claimed by: ${claimers.map((claimer) => claimer?.name).join(', ')}`
                               : 'Unclaimed'}
                           </p>
                         )}
                         {isFullyClaimed ? (
-                          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          <p className="mt-2 inline-flex items-center rounded-full bg-gray-300 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-800">
                             Fully claimed
                           </p>
                         ) : null}
-                        {splitWithAllClaim ? (
-                          <p className="text-sm text-blue-600 font-medium">
-                            Split equally{splitWithAllName ? ` (set by ${splitWithAllName})` : ''}
-                          </p>
-                        ) : null}
                       </div>
 
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                        {item.quantity > 1 && shareType !== 'split_with_all' && !splitWithAllLocked ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">Qty</span>
-                            <input
-                              type="number"
-                              min={1}
-                              max={Math.max(remainingQuantity, 1)}
-                              value={inputQuantity}
-                              onChange={(event) => {
-                                const next = Math.max(1, Math.min(Number(event.target.value) || 1, Math.max(remainingQuantity, 1)))
-                                setClaimQuantities((prev) => ({ ...prev, [item.id]: next }))
-                              }}
-                              className="input-field text-gray-900 w-20"
-                            />
-                          </div>
-                        ) : null}
-
-
-                        <div className="flex flex-col gap-2">
-                          <label className="text-xs uppercase tracking-wide text-gray-500">Split</label>
-                          <select
-                            className="input-field text-gray-900 w-full sm:w-60"
-                            value={shareType}
-                            onChange={(event) => {
-                              const nextType = event.target.value as 'solo' | 'split_with_specific' | 'split_with_all'
-                              setClaimShareTypes((prev) => ({ ...prev, [item.id]: nextType }))
-                              if (nextType !== 'split_with_specific') {
-                                setClaimShareWith((prev) => ({ ...prev, [item.id]: [] }))
-                              }
-                            }}
-                            disabled={splitWithAllLocked}
-                          >
-                            <option value="solo">Just me</option>
-                            <option value="split_with_all" disabled={otherParticipants.length === 0}>
-                              Split with everyone
-                            </option>
-                            <option value="split_with_specific" disabled={otherParticipants.length === 0}>
-                              Split with specific people
-                            </option>
-                          </select>
-
-                          {shareType === 'split_with_specific' && !splitWithAllLocked ? (
-                            <div className="flex flex-wrap gap-2">
-                              {otherParticipants.map((participant) => (
-                                <label
-                                  key={participant.id}
-                                  className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-sm text-gray-700"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30"
-                                    checked={shareWith.includes(participant.id)}
-                                    onChange={(event) => {
-                                      const next = event.target.checked
-                                        ? [...shareWith, participant.id]
-                                        : shareWith.filter((id) => id !== participant.id)
-                                      setClaimShareWith((prev) => ({ ...prev, [item.id]: next }))
-                                    }}
-                                  />
-                                  {participant.name}
-                                </label>
-                              ))}
+                      {!isLocked || claimedBySelected ? (
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                          {item.quantity > 1 && shareType !== 'split_with_all' && !splitWithAllLocked ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-500">Qty</span>
+                              <input
+                                type="number"
+                                min={1}
+                                max={Math.max(remainingQuantity, 1)}
+                                value={inputQuantity}
+                                onChange={(event) => {
+                                  const next = Math.max(1, Math.min(Number(event.target.value) || 1, Math.max(remainingQuantity, 1)))
+                                  setClaimQuantities((prev) => ({ ...prev, [item.id]: next }))
+                                }}
+                                className="input-field text-gray-900 w-20"
+                              />
                             </div>
                           ) : null}
 
-                          {missingSpecificShares ? (
-                            <p className="text-xs text-red-500">Pick at least one person to split with.</p>
+                          {!splitWithAllLocked ? (
+                            <div className="flex flex-col gap-2">
+                              <label className="text-xs uppercase tracking-wide text-gray-500">Split</label>
+                              <select
+                                className="input-field text-gray-900 w-full sm:w-60"
+                                value={shareType}
+                                onChange={(event) => {
+                                  const nextType = event.target.value as 'solo' | 'split_with_specific' | 'split_with_all'
+                                  setClaimShareTypes((prev) => ({ ...prev, [item.id]: nextType }))
+                                  if (nextType !== 'split_with_specific') {
+                                    setClaimShareWith((prev) => ({ ...prev, [item.id]: [] }))
+                                  }
+                                }}
+                              >
+                                <option value="solo">Just me</option>
+                                <option value="split_with_all" disabled={otherParticipants.length === 0}>
+                                  Split with everyone
+                                </option>
+                                <option value="split_with_specific" disabled={otherParticipants.length === 0}>
+                                  Split with specific people
+                                </option>
+                              </select>
+
+                              {shareType === 'split_with_specific' ? (
+                                <div className="flex flex-wrap gap-2">
+                                  {otherParticipants.map((participant) => (
+                                    <label
+                                      key={participant.id}
+                                      className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-sm text-gray-700"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30"
+                                        checked={shareWith.includes(participant.id)}
+                                        onChange={(event) => {
+                                          const next = event.target.checked
+                                            ? [...shareWith, participant.id]
+                                            : shareWith.filter((id) => id !== participant.id)
+                                          setClaimShareWith((prev) => ({ ...prev, [item.id]: next }))
+                                        }}
+                                      />
+                                      {participant.name}
+                                    </label>
+                                  ))}
+                                </div>
+                              ) : null}
+
+                              {missingSpecificShares ? (
+                                <p className="text-xs text-red-500">Pick at least one person to split with.</p>
+                              ) : null}
+                            </div>
+                          ) : null}
+
+                          {!isFullyClaimed && !splitWithAllLocked ? (
+                            <button
+                              className={claimedBySelected ? 'btn-secondary' : 'btn-primary'}
+                              disabled={
+                                !selectedParticipantId ||
+                                !!busyItemIds[item.id] ||
+                                remainingQuantity <= 0 ||
+                                missingSpecificShares
+                              }
+                              onClick={() => handleToggleClaim(item.id, inputQuantity)}
+                            >
+                              {busyItemIds[item.id] ? (
+                                <span className="flex items-center gap-2">
+                                  <Loader2 className="animate-spin" size={16} />
+                                  Saving
+                                </span>
+                              ) : claimedBySelected ? (
+                                'Update claim'
+                              ) : (
+                                'Claim'
+                              )}
+                            </button>
+                          ) : null}
+
+                          {claimedBySelected && !splitWithAllLocked ? (
+                            <button
+                              className="btn-secondary"
+                              disabled={!selectedParticipantId || !!busyItemIds[item.id]}
+                              onClick={() => handleToggleClaim(item.id, 0)}
+                            >
+                              Unclaim
+                            </button>
                           ) : null}
                         </div>
-
-                        <button
-                          className={claimedBySelected ? 'btn-secondary' : 'btn-primary'}
-                          disabled={
-                            !selectedParticipantId ||
-                            !!busyItemIds[item.id] ||
-                            remainingQuantity <= 0 ||
-                            missingSpecificShares ||
-                            splitWithAllLocked
-                          }
-                          onClick={() => handleToggleClaim(item.id, inputQuantity)}
-                        >
-                          {busyItemIds[item.id] ? (
-                            <span className="flex items-center gap-2">
-                              <Loader2 className="animate-spin" size={16} />
-                              Saving
-                            </span>
-                          ) : splitWithAllLocked ? (
-                            'Split equally'
-                          ) : claimedBySelected ? (
-                            'Update claim'
-                          ) : (
-                            'Claim'
-                          )}
-                        </button>
-
-                        {claimedBySelected && !splitWithAllLocked ? (
-                          <button
-                            className="btn-secondary"
-                            disabled={!selectedParticipantId || !!busyItemIds[item.id]}
-                            onClick={() => handleToggleClaim(item.id, 0)}
-                          >
-                            Unclaim
-                          </button>
-                        ) : null}
-                      </div>
+                      ) : null}
                     </div>
                   )
                 })}
@@ -474,18 +490,24 @@ export default function JoinBillPage() {
 
             <div className="glass-card rounded-3xl p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Bill summary</h3>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="bg-gray-100 rounded-2xl px-4 py-3 text-gray-700">
-                  Subtotal: {formatCurrency(billSubtotal)}
-                </div>
-                <div className="bg-gray-100 rounded-2xl px-4 py-3 text-gray-700">
-                  Tax ({(taxPercent * 100).toFixed(2)}%): {formatCurrency(taxAmount)}
-                </div>
-                <div className="bg-gray-100 rounded-2xl px-4 py-3 text-gray-700">
-                  Tip ({(tipPercent * 100).toFixed(2)}%): {formatCurrency(tipAmount)}
-                </div>
-                <div className="bg-blue-100 rounded-2xl px-4 py-3 text-blue-700 font-semibold">
-                  Total: {formatCurrency(billSubtotal + taxAmount + tipAmount)}
+              <div className="rounded-2xl border border-gray-200 bg-white/70 p-4">
+                <div className="space-y-2 text-sm text-gray-700">
+                  <div className="flex items-center justify-between">
+                    <span>Subtotal</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(billSubtotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Tax ({(taxPercent * 100).toFixed(2)}%)</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(taxAmount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Tip ({(tipPercent * 100).toFixed(2)}%)</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(tipAmount)}</span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between rounded-xl bg-blue-100 px-3 py-2 text-blue-800">
+                    <span className="text-sm font-semibold">Total</span>
+                    <span className="font-bold">{formatCurrency(billSubtotal + taxAmount + tipAmount)}</span>
+                  </div>
                 </div>
               </div>
             </div>
