@@ -376,10 +376,11 @@ export default function JoinBillPage() {
                       </div>
 
                       {!isLocked || claimedBySelected ? (
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                        <div className="flex flex-col gap-3 w-full sm:w-auto sm:min-w-[320px]">
+                          {/* Quantity selector */}
                           {item.quantity > 1 && shareType !== 'split_with_all' && !splitWithAllLocked ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-500">Qty</span>
+                            <div className="flex items-center gap-3">
+                              <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 min-w-[40px]">Qty</label>
                               <input
                                 type="number"
                                 min={1}
@@ -389,16 +390,18 @@ export default function JoinBillPage() {
                                   const next = Math.max(1, Math.min(Number(event.target.value) || 1, Math.max(remainingQuantity, 1)))
                                   setClaimQuantities((prev) => ({ ...prev, [item.id]: next }))
                                 }}
-                                className="input-field text-gray-900 w-20"
+                                className="input-field text-gray-900 w-20 text-center font-semibold"
                               />
+                              <span className="text-sm text-gray-500">of {item.quantity}</span>
                             </div>
                           ) : null}
 
+                          {/* Split type selector */}
                           {!splitWithAllLocked ? (
-                            <div className="flex flex-col gap-2">
-                              <label className="text-xs uppercase tracking-wide text-gray-500">Split</label>
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">Split Type</label>
                               <select
-                                className="input-field text-gray-900 w-full sm:w-60"
+                                className="input-field text-gray-900 w-full font-medium"
                                 value={shareType}
                                 onChange={(event) => {
                                   const nextType = event.target.value as 'solo' | 'split_with_specific' | 'split_with_all'
@@ -417,12 +420,17 @@ export default function JoinBillPage() {
                                 </option>
                               </select>
 
+                              {/* Split with specific people checkboxes */}
                               {shareType === 'split_with_specific' ? (
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-2 pt-1">
                                   {otherParticipants.map((participant) => (
                                     <label
                                       key={participant.id}
-                                      className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-sm text-gray-700"
+                                      className={`flex items-center gap-2 rounded-full border-2 px-3 py-1.5 text-sm cursor-pointer transition-all ${
+                                        shareWith.includes(participant.id)
+                                          ? 'border-primary bg-primary/10 text-primary font-semibold'
+                                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                                      }`}
                                     >
                                       <input
                                         type="checkbox"
@@ -442,44 +450,49 @@ export default function JoinBillPage() {
                               ) : null}
 
                               {missingSpecificShares ? (
-                                <p className="text-xs text-red-500">Pick at least one person to split with.</p>
+                                <p className="text-xs font-semibold text-red-600 bg-red-50 rounded-lg px-3 py-2 border border-red-200">
+                                  Pick at least one person to split with
+                                </p>
                               ) : null}
                             </div>
                           ) : null}
 
-                          {!isFullyClaimed && !splitWithAllLocked ? (
-                            <button
-                              className={claimedBySelected ? 'btn-secondary' : 'btn-primary'}
-                              disabled={
-                                !selectedParticipantId ||
-                                !!busyItemIds[item.id] ||
-                                remainingQuantity <= 0 ||
-                                missingSpecificShares
-                              }
-                              onClick={() => handleToggleClaim(item.id, inputQuantity)}
-                            >
-                              {busyItemIds[item.id] ? (
-                                <span className="flex items-center gap-2">
-                                  <Loader2 className="animate-spin" size={16} />
-                                  Saving
-                                </span>
-                              ) : claimedBySelected ? (
-                                'Update claim'
-                              ) : (
-                                'Claim'
-                              )}
-                            </button>
-                          ) : null}
+                          {/* Action buttons */}
+                          <div className="flex gap-2 pt-1">
+                            {!isFullyClaimed && !splitWithAllLocked ? (
+                              <button
+                                className={`flex-1 ${claimedBySelected ? 'btn-secondary' : 'btn-primary'}`}
+                                disabled={
+                                  !selectedParticipantId ||
+                                  !!busyItemIds[item.id] ||
+                                  remainingQuantity <= 0 ||
+                                  missingSpecificShares
+                                }
+                                onClick={() => handleToggleClaim(item.id, inputQuantity)}
+                              >
+                                {busyItemIds[item.id] ? (
+                                  <span className="flex items-center gap-2 justify-center">
+                                    <Loader2 className="animate-spin" size={16} />
+                                    Saving
+                                  </span>
+                                ) : claimedBySelected ? (
+                                  'Update Claim'
+                                ) : (
+                                  'Claim Item'
+                                )}
+                              </button>
+                            ) : null}
 
-                          {claimedBySelected && !splitWithAllLocked ? (
-                            <button
-                              className="btn-secondary"
-                              disabled={!selectedParticipantId || !!busyItemIds[item.id]}
-                              onClick={() => handleToggleClaim(item.id, 0)}
-                            >
-                              Unclaim
-                            </button>
-                          ) : null}
+                            {claimedBySelected && !splitWithAllLocked ? (
+                              <button
+                                className="btn-secondary px-4"
+                                disabled={!selectedParticipantId || !!busyItemIds[item.id]}
+                                onClick={() => handleToggleClaim(item.id, 0)}
+                              >
+                                Unclaim
+                              </button>
+                            ) : null}
+                          </div>
                         </div>
                       ) : null}
                     </div>

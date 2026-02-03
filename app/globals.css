@@ -50,10 +50,19 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
 .animate-slide-up {
   animation: slideUp 0.5s ease-out forwards;
 }
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-gradient {
+  animation: gradient 3s ease infinite;
 }
