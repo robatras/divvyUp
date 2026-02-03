@@ -99,7 +99,7 @@ export default function JoinBillPage() {
       const item = bill.items.find((candidate) => candidate.id === claim.item_id)
       if (!item) return
 
-      const itemPrice = parseFloat(item.price)
+      const itemPrice = Number(item.price)
 
       if (claim.share_type === 'solo') {
         const claimQuantity = claim.quantity_claimed ?? 1

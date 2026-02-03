@@ -13,7 +13,7 @@ export function calculateSplits(
   })
 
   const subtotal = items.reduce((sum, item) => {
-    const itemPrice = parseFloat(item.price)
+    const itemPrice = Number(item.price)
     return sum + itemPrice
   }, 0)
   const extrasTotal = (Number(taxAmount) || 0) + (Number(tipAmount) || 0)
@@ -24,7 +24,7 @@ export function calculateSplits(
     const item = items.find(i => i.id === claim.item_id)
     if (!item) return
 
-    const itemPrice = parseFloat(item.price)
+    const itemPrice = Number(item.price)
     const itemWithExtras = itemPrice * multiplier
 
     if (claim.share_type === 'solo') {
