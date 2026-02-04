@@ -43,16 +43,11 @@ export function calculateSplits(
     const claimerPersonCount = 1 + getPlusOneCount(claimer)
 
     if (claim.share_type === 'solo') {
-      // One person gets the full item
-      // For quantity items (qty > 1), the quantity represents servings/portions
-      // So we don't multiply by person count - they claim X items regardless of +1s
+      // Solo claims: Person claims the item for themselves, no +1 multiplier
+      // They're claiming a specific quantity of the item
       const claimQuantity = claim.quantity_claimed ?? 1
       const itemQuantity = item.quantity || 1
-      const portionPrice = itemWithExtras * (claimQuantity / itemQuantity)
-
-      // Only multiply by person count if item quantity is 1 (not a multi-quantity item)
-      const finalAmount = itemQuantity === 1 ? portionPrice * claimerPersonCount : portionPrice
-      splits[claim.participant_id] += finalAmount
+      splits[claim.participant_id] += itemWithExtras * (claimQuantity / itemQuantity)
     } else if (claim.share_type === 'split_with_all') {
       // Split among all participants (accounting for +1s)
       const perPerson = itemWithExtras / totalPersonCount
@@ -166,12 +161,10 @@ export function getItemizedShares(
     const claimerPersonCount = 1 + getPlusOneCount(claimer)
 
     if (claim.share_type === 'solo') {
+      // Solo claims: Person claims the item for themselves, no +1 multiplier
       const claimQuantity = claim.quantity_claimed ?? 1
       const itemQuantity = item.quantity || 1
-      const portionPrice = itemPrice * (claimQuantity / itemQuantity)
-
-      // Only multiply by person count if item quantity is 1 (not a multi-quantity item)
-      const amount = itemQuantity === 1 ? portionPrice * claimerPersonCount : portionPrice
+      const amount = itemPrice * (claimQuantity / itemQuantity)
       addShare(claim.participant_id, item.id, item.name, amount)
     } else if (claim.share_type === 'split_with_all') {
       const perPerson = itemPrice / totalPersonCount
