@@ -26,7 +26,7 @@ export default function JoinBillPage() {
   const [claimQuantities, setClaimQuantities] = useState<Record<string, number>>({})
   const [claimShareTypes, setClaimShareTypes] = useState<Record<string, 'solo' | 'split_with_specific' | 'split_with_all'>>({})
   const [claimShareWith, setClaimShareWith] = useState<Record<string, string[]>>({})
-  const [showMyItems, setShowMyItems] = useState(false)
+  const [showEveryoneShare, setShowEveryoneShare] = useState(false)
 
   const fetchBill = useCallback(async (silent = false) => {
     if (!code) return
@@ -200,6 +200,30 @@ export default function JoinBillPage() {
                 />
               </div>
             ) : null}
+
+            <div className="glass-card rounded-3xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Bill Summary</h3>
+              <div className="rounded-2xl border border-gray-200 bg-white/70 p-4">
+                <div className="space-y-2 text-sm text-gray-700">
+                  <div className="flex items-center justify-between">
+                    <span>Subtotal</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(billSubtotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Tax ({(taxPercent * 100).toFixed(2)}%)</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(taxAmount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Tip ({(tipPercent * 100).toFixed(2)}%)</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(tipAmount)}</span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between rounded-xl bg-blue-100 px-3 py-2 text-blue-800">
+                    <span className="text-sm font-semibold">Total</span>
+                    <span className="font-bold">{formatCurrency(billSubtotal + taxAmount + tipAmount)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div className="glass-card rounded-3xl p-6">
               <div className="flex items-center justify-between mb-6">
@@ -441,29 +465,20 @@ export default function JoinBillPage() {
 
                 {/* Item Breakdown */}
                 {myItems.length > 0 && (
-                  <div className="mt-4">
-                    <button
-                      type="button"
-                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-                      onClick={() => setShowMyItems((prev) => !prev)}
-                    >
-                      <span className="text-sm font-semibold text-gray-900">
-                        Item breakdown ({myItems.length})
-                      </span>
-                      <span className="text-xs font-semibold text-gray-500 px-2 py-1 rounded-full bg-white">
-                        {showMyItems ? 'Hide' : 'Show'}
-                      </span>
-                    </button>
-                    {showMyItems && (
-                      <div className="mt-3 space-y-2 px-4">
-                        {myItems.map((entry, index) => (
-                          <div key={`${entry.item_id}-${index}`} className="flex items-center justify-between text-sm py-2 border-b border-gray-100 last:border-0">
-                            <span className="text-gray-700">{entry.name}</span>
-                            <span className="font-semibold text-gray-900">{formatCurrency(entry.amount)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm font-semibold text-gray-900 mb-3">Item breakdown</p>
+                    <div className="space-y-2">
+                      {myItems.map((entry, index) => (
+                        <div key={`${entry.item_id}-${index}`} className="flex items-center justify-between text-sm py-2 border-b border-gray-200/70 last:border-0">
+                          <span className="text-gray-700">{entry.name}</span>
+                          <span className="font-semibold text-gray-900">{formatCurrency(entry.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between text-sm text-gray-700">
+                      <span className="font-semibold">Subtotal</span>
+                      <span className="font-bold text-gray-900">{formatCurrency(mySubtotal)}</span>
+                    </div>
                   </div>
                 )}
 
@@ -477,28 +492,68 @@ export default function JoinBillPage() {
               </div>
             ) : null}
 
+
             <div className="glass-card rounded-3xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Bill Summary</h3>
-              <div className="rounded-2xl border border-gray-200 bg-white/70 p-4">
-                <div className="space-y-2 text-sm text-gray-700">
-                  <div className="flex items-center justify-between">
-                    <span>Subtotal</span>
-                    <span className="font-semibold text-gray-900">{formatCurrency(billSubtotal)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Tax ({(taxPercent * 100).toFixed(2)}%)</span>
-                    <span className="font-semibold text-gray-900">{formatCurrency(taxAmount)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Tip ({(tipPercent * 100).toFixed(2)}%)</span>
-                    <span className="font-semibold text-gray-900">{formatCurrency(tipAmount)}</span>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between rounded-xl bg-blue-100 px-3 py-2 text-blue-800">
-                    <span className="text-sm font-semibold">Total</span>
-                    <span className="font-bold">{formatCurrency(billSubtotal + taxAmount + tipAmount)}</span>
-                  </div>
-                </div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">See everyone's share</h3>
+                <button
+                  type="button"
+                  className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                  onClick={() => setShowEveryoneShare((prev) => !prev)}
+                >
+                  {showEveryoneShare ? 'Hide' : 'Show'}
+                </button>
               </div>
+
+              {showEveryoneShare ? (
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {bill.participants.map((participant) => (
+                    <div key={participant.id} className="border border-gray-200 rounded-2xl p-4 bg-white">
+                      <div className="flex items-center justify-between">
+                        <p className="text-gray-900 font-semibold">{participant.name}</p>
+                        <p className="text-green-700 font-semibold">
+                          {formatCurrency(splits[participant.id] || 0)}
+                        </p>
+                      </div>
+                      <div className="mt-3 space-y-1 text-sm text-gray-700">
+                        {(itemizedShares[participant.id]?.items || []).map((entry, index) => (
+                          <div key={`${entry.item_id}-${index}`} className="flex items-center justify-between">
+                            <span>{entry.name}</span>
+                            <span className="font-semibold text-gray-900">{formatCurrency(entry.amount)}</span>
+                          </div>
+                        ))}
+                        <div className="pt-2 mt-2 border-t border-gray-200 text-sm text-gray-700 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold">Subtotal</span>
+                            <span className="font-bold text-gray-900">
+                              {formatCurrency(itemizedShares[participant.id]?.subtotal || 0)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Tax ({(taxPercent * 100).toFixed(2)}%)</span>
+                            <span className="font-semibold text-gray-900">
+                              {formatCurrency((itemizedShares[participant.id]?.subtotal || 0) * taxPercent)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Tip ({(tipPercent * 100).toFixed(2)}%)</span>
+                            <span className="font-semibold text-gray-900">
+                              {formatCurrency((itemizedShares[participant.id]?.subtotal || 0) * tipPercent)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between rounded-lg bg-green-50 px-2 py-1 text-green-800">
+                            <span className="font-semibold">Total</span>
+                            <span className="font-bold">
+                              {formatCurrency(splits[participant.id] || 0)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {(itemizedShares[participant.id]?.items || []).length ? null : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
         ) : null}

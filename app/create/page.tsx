@@ -56,7 +56,6 @@ export default function CreateBillPage() {
   const [taxAmount, setTaxAmount] = useState('')
   const [tipAmount, setTipAmount] = useState('')
   const [ocrData, setOcrData] = useState<any>(null)
-  const [organizerPhone, setOrganizerPhone] = useState('')
 
   const steps: Step[] = ['receipt', 'items', 'participants', 'review']
   const currentStepIndex = steps.indexOf(step)
@@ -194,7 +193,7 @@ export default function CreateBillPage() {
       case 'items':
         return items.some(item => item.name && item.price)
       case 'participants':
-        return participants.some(p => p.name) && !!organizerPhone.trim()
+        return participants.some(p => p.name)
       case 'review':
         return true
     }
@@ -217,12 +216,6 @@ export default function CreateBillPage() {
   const handleSubmit = async () => {
     setLoading(true)
     try {
-      if (!organizerPhone.trim()) {
-        alert('Organizer phone number is required for recovery.')
-        setLoading(false)
-        return
-      }
-
       // Upload receipt if exists
       let receiptImageUrl = null
       if (receiptImage) {
@@ -249,15 +242,18 @@ export default function CreateBillPage() {
           tipAmount: parseFloat(tipAmount) || 0,
           receiptImageUrl,
           ocrData,
-          organizerPhone
         })
       })
 
       const result = await response.json()
       if (result.success) {
         // Redirect to bill page
-        const organizerCode = result.data.organizerAccessCode
-        router.push(`/organizer/${organizerCode}`)
+        const billId = result.data.bill?.id
+        if (billId) {
+          router.push(`/bill/${billId}`)
+        } else {
+          router.push('/join')
+        }
       } else {
         alert('Failed to create bill: ' + result.error)
       }
@@ -314,7 +310,7 @@ export default function CreateBillPage() {
             <div className="space-y-6">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload Receipt</h2>
-                <p className="text-gray-600">We'll extract items automatically (optional)</p>
+                <p className="text-gray-600">We’ll extract items automatically (optional). You can add missing details on the next page.</p>
               </div>
 
               <label className="block">
@@ -334,8 +330,11 @@ export default function CreateBillPage() {
                         className="max-h-64 mx-auto rounded-lg"
                       />
                       <p className="text-primary font-medium">
-                        {ocrData ? `Found ${ocrData.items?.length || 0} items` : 'Receipt uploaded'}
+                        {ocrData ? 'Congrats on the points — we crunched the receipt.' : 'Receipt uploaded'}
                       </p>
+                      {ocrData ? (
+                        <p className="text-gray-500 text-sm">You can confirm the details on the next page.</p>
+                      ) : null}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-4">
@@ -357,12 +356,14 @@ export default function CreateBillPage() {
                 />
               </label>
 
-              <button
-                onClick={handleNext}
-                className="w-full text-primary font-medium py-3"
-              >
-                Skip, I'll enter items manually
-              </button>
+              {!receiptPreview ? (
+                <button
+                  onClick={handleNext}
+                  className="w-full text-primary font-medium py-3"
+                >
+                  Skip, I'll enter items manually
+                </button>
+              ) : null}
             </div>
           )}
 
@@ -442,29 +443,7 @@ export default function CreateBillPage() {
           {step === 'participants' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Organizer details</h2>
-                <p className="text-gray-600">Set up organizer access before inviting friends.</p>
-              </div>
-
-              <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-bold text-gray-900 mb-2">Organizer phone</h3>
-                <p className="text-gray-600 text-sm mb-3">
-                  Needed for SMS recovery if you lose your organizer link (your private dashboard link).
-                </p>
-                <input
-                  type="tel"
-                  placeholder="Your phone number"
-                  value={organizerPhone}
-                  onChange={(e) => setOrganizerPhone(formatUSPhone(e.target.value))}
-                  inputMode="numeric"
-                  pattern="\\d{3}-\\d{3}-\\d{4}"
-                  maxLength={12}
-                  className="input-field text-gray-900"
-                />
-              </div>
-
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Add Friends</h3>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Guests</h2>
                 <p className="text-gray-600 mb-3">Who's splitting this bill?</p>
                 <div className="flex items-center gap-4 text-sm text-gray-500">
                   <div className="flex-1">Enter each person's name</div>

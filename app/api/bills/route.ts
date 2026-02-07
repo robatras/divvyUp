@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
 import { supabaseAdmin, generateBillCode } from '@/lib/supabase'
 import type { Bill, Item, Participant } from '@/types'
-import { formatPhoneNumber, validatePhoneNumber } from '@/lib/twilio'
 
 export async function POST(request: Request) {
   try {
@@ -24,16 +23,6 @@ export async function POST(request: Request) {
     const parsedTipAmount = Number(tipAmount ?? ocrData?.tip ?? 0)
     const safeTaxAmount = Number.isFinite(parsedTaxAmount) ? parsedTaxAmount : 0
     const safeTipAmount = Number.isFinite(parsedTipAmount) ? parsedTipAmount : 0
-    const normalizedOrganizerPhone = organizerPhone
-      ? formatPhoneNumber(String(organizerPhone))
-      : ''
-
-    if (!normalizedOrganizerPhone || !validatePhoneNumber(normalizedOrganizerPhone)) {
-      return NextResponse.json(
-        { success: false, error: 'Organizer phone number is required for recovery.' },
-        { status: 400 }
-      )
-    }
 
     // Create bill
     const { data: bill, error: billError } = await supabaseAdmin
@@ -48,7 +37,7 @@ export async function POST(request: Request) {
         ocr_tax_amount: safeTaxAmount,
         ocr_tip_amount: safeTipAmount,
         ocr_total: ocrData?.total,
-        organizer_phone: normalizedOrganizerPhone,
+        organizer_phone: null,
         organizer_access_code: organizerAccessCode,
         status: 'active'
       })
