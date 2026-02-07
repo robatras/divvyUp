@@ -11,6 +11,26 @@ export default function Home() {
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/30 rounded-full blur-3xl animate-pulse delay-1000" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-full blur-3xl" />
 
+      {/* Falling pizza slices (first few seconds) */}
+      <div className="pointer-events-none absolute inset-0 z-0">
+        {[
+          { left: '8%', delay: '0ms', size: 'text-2xl' },
+          { left: '26%', delay: '350ms', size: 'text-3xl' },
+          { left: '44%', delay: '700ms', size: 'text-2xl' },
+          { left: '62%', delay: '1100ms', size: 'text-3xl' },
+          { left: '80%', delay: '1500ms', size: 'text-2xl' }
+        ].map((slice, index) => (
+          <div
+            key={index}
+            className={`absolute ${slice.size} pizza-fall`}
+            style={{ left: slice.left, animationDelay: slice.delay, top: '-120px' }}
+            aria-hidden="true"
+          >
+            🍕
+          </div>
+        ))}
+      </div>
+
       <div className="relative z-10 container mx-auto px-4 py-16 md:py-20">
         {/* Hero Section */}
         <div className="text-center max-w-4xl mx-auto mb-16 md:mb-24 animate-slide-up">

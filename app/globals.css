@@ -50,6 +50,12 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes pizzaFall {
+  0% { transform: translateY(-120px) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(120vh) rotate(180deg); opacity: 0; }
+}
+
 @keyframes gradient {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -61,6 +67,10 @@
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
+}
+
+.pizza-fall {
+  animation: pizzaFall 3.2s ease-in forwards;
 }
 
 .animate-gradient {
