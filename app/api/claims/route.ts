@@ -299,13 +299,16 @@ async function recalculateClaims(itemId: string) {
       amountOwed = totalPersonCount > 0 ? itemWithExtras * (personCount / totalPersonCount) : 0
     } else if (claim.share_type === 'split_with_specific') {
       const shareWith = claim.share_with_participant_ids || []
+      const claimQuantity = claim.quantity_claimed ?? 1
+      const itemQuantity = item.quantity || 1
       const claimerPlusOne = participantMap.get(claim.participant_id)?.plusOneCount || 0
       let totalPerson = 1 + claimerPlusOne
       shareWith.forEach((pid: string) => {
         const plusOneCount = participantMap.get(pid)?.plusOneCount || 0
         totalPerson += 1 + plusOneCount
       })
-      const perPerson = totalPerson > 0 ? itemWithExtras / totalPerson : 0
+      const claimedPortionPrice = itemWithExtras * (claimQuantity / itemQuantity)
+      const perPerson = totalPerson > 0 ? claimedPortionPrice / totalPerson : 0
       const claimerPerson = 1 + claimerPlusOne
       amountOwed = perPerson * claimerPerson
     }

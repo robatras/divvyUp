@@ -58,6 +58,8 @@ export function calculateSplits(
     } else if (claim.share_type === 'split_with_specific') {
       // Split among specific people (accounting for +1s)
       const shareWith = claim.share_with_participant_ids || []
+      const claimQuantity = claim.quantity_claimed ?? 1
+      const itemQuantity = item.quantity || 1
 
       // Calculate total person count for this split
       let totalSharerPersonCount = claimerPersonCount
@@ -68,7 +70,8 @@ export function calculateSplits(
         }
       })
 
-      const perPerson = itemWithExtras / totalSharerPersonCount
+      const claimedPortionPrice = itemWithExtras * (claimQuantity / itemQuantity)
+      const perPerson = claimedPortionPrice / totalSharerPersonCount
 
       splits[claim.participant_id] += perPerson * claimerPersonCount
       shareWith.forEach((pid: string) => {
@@ -174,6 +177,8 @@ export function getItemizedShares(
       })
     } else if (claim.share_type === 'split_with_specific') {
       const shareWith = claim.share_with_participant_ids || []
+      const claimQuantity = claim.quantity_claimed ?? 1
+      const itemQuantity = item.quantity || 1
 
       // Calculate total person count for this split
       let totalSharerPersonCount = claimerPersonCount
@@ -184,7 +189,8 @@ export function getItemizedShares(
         }
       })
 
-      const perPerson = itemPrice / totalSharerPersonCount
+      const claimedPortionPrice = itemPrice * (claimQuantity / itemQuantity)
+      const perPerson = claimedPortionPrice / totalSharerPersonCount
 
       addShare(claim.participant_id, item.id, item.name, perPerson * claimerPersonCount)
       shareWith.forEach((pid: string) => {
